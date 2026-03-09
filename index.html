@@ -1,1 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FMPT Student Hub — Chat</title>
+  <meta name="description" content="Simple realtime chat for chat.fmpt.net" />
+  <link rel="icon" type="image/png" href="favicon.png" />
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --gold:#FFA700;
+      --blue:#0C4D9B;
+      --deep:#071B33;
+      --text:#EAF0F7;
+      --muted:#C7D5E6;
+      --border: rgba(255,255,255,0.14);
+      --r1:16px; --r2:22px; --r3:28px;
+      --danger:#ff7676;
+      --success:#7ee3a7;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{
+      font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      background:
+        radial-gradient(1200px 800px at 10% -10%, rgba(255,167,0,0.14), transparent 40%),
+        radial-gradient(900px 650px at 90% 10%, rgba(12,77,155,0.26), transparent 45%),
+        linear-gradient(180deg, #050E1B, #071B33 60%, #050E1B);
+      color:var(--text);
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+    a{color:inherit}
+    button,input{font-family:inherit}
+
+    @media (prefers-reduced-motion: reduce){
+      html{scroll-behavior:auto}
+      *{animation:none !important; transition:none !important}
+    }
+
+    .orb{
+      position:fixed;
+      width:420px;height:420px;
+      border-radius:999px;
+      filter: blur(80px);
+      opacity:.42;
+      z-index:-2;
+      pointer-events:none;
+      animation: drift 10s ease-in-out infinite alternate;
+    }
+    .orb.one{left:-160px;top:8vh;background:radial-gradient(circle, rgba(255,167,0,.42), transparent 60%)}
+    .orb.two{right:-180px;top:3vh;background:radial-gradient(circle, rgba(12,77,155,.52), transparent 62%); animation-duration:12s}
+    .orb.three{left:22vw;bottom:-220px;background:radial-gradient(circle, rgba(255,255,255,.16), transparent 60%); animation-duration:14s}
+
+    @keyframes drift{
+      from{transform:translate3d(0,0,0) scale(1)}
+      to{transform:translate3d(30px,-18px,0) scale(1.05)}
+    }
+
+    .gridglow{
+      position:fixed; inset:0;
+      background:
+        linear-gradient(to right, rgba(255,255,255,0.045) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,0.045) 1px, transparent 1px);
+      background-size: 72px 72px;
+      opacity:.06;
+      mask-image: radial-gradient(720px 540px at 50% 12%, rgba(0,0,0,1), rgba(0,0,0,.15), transparent 70%);
+      z-index:-1;
+      pointer-events:none;
+      animation: gridFloat 10s ease-in-out infinite alternate;
+      will-change: transform;
+    }
+    @keyframes gridFloat{from{transform:translateY(0)}to{transform:translateY(12px)}}
+
+    header{
+      position:fixed;top:0;left:0;right:0;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:16px 22px;
+      z-index:30;
+      background:linear-gradient(180deg, rgba(7,27,51,0.86), rgba(7,27,51,0.18), rgba(7,27,51,0));
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid rgba(255,255,255,0.06);
+    }
+    .brand{
+      display:flex;align-items:baseline;gap:12px;min-width:0;
+      text-decoration:none;
+    }
+    .brand-name{
+      font-weight:900;letter-spacing:.02em;font-size:16px;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .brand-sub{
+      font-size:12px;color:rgba(199,213,230,.95);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+
+    .pill{
+      padding:9px 12px;border-radius:999px;
+      background:rgba(255,167,0,0.10);
+      color:var(--gold);
+      font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+      border:1px solid rgba(255,167,0,0.26);
+      display:inline-flex;align-items:center;gap:8px;
+      user-select:none;
+    }
+    .pill .dot{
+      width:8px;height:8px;border-radius:999px;
+      background:rgba(255,167,0,.95);
+      box-shadow:0 0 0 4px rgba(255,167,0,.16);
+      animation:pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes pulse{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.22);opacity:.55}}
+
+    .btn{
+      padding:11px 16px;border-radius:14px;font-weight:700;
+      border:1px solid rgba(255,255,255,0.16);
+      background:rgba(255,255,255,0.06);
+      color:#fff;cursor:pointer;
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, opacity .18s ease;
+      backdrop-filter: blur(8px);
+      text-decoration:none;display:inline-flex;align-items:center;gap:10px;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.18);
+      user-select:none;
+      white-space:nowrap;
+    }
+    .btn.primary{
+      background:linear-gradient(135deg, var(--gold), #FFD36B);
+      color:#3B2A00;border:none;
+      box-shadow:0 16px 44px rgba(255,167,0,0.22);
+      font-weight:950;
+    }
+    .btn:hover{transform:translateY(-2px);border-color: rgba(255,167,0,.20)}
+    .btn:active{transform:translateY(0) scale(.99)}
+    .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+
+    main{
+      padding:112px 18px 70px;
+      max-width:1120px;
+      margin:auto;
+    }
+
+    .hero{text-align:center;padding:18px 14px 10px}
+    .kicker{
+      display:inline-flex;align-items:center;gap:10px;
+      padding:9px 14px;border-radius:999px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      color:rgba(255,255,255,.88);
+      margin-bottom:18px;
+      box-shadow: 0 20px 70px rgba(0,0,0,.22);
+    }
+    .kicker b{color:#FFF2C7}
+    h1{
+      font-family:'Playfair Display',serif;
+      font-size:clamp(38px,6.2vw,66px);
+      line-height:1.03;
+      margin-bottom:12px;
+      background:linear-gradient(90deg, #FFF3C4, var(--gold), #8FC2FF);
+      -webkit-background-clip:text;background-clip:text;color:transparent;
+      text-shadow: 0 22px 52px rgba(0,0,0,.34);
+    }
+    .hero-sub{
+      max-width:920px;margin:0 auto;
+      font-size:clamp(15px,2.2vw,18px);
+      color:var(--muted);
+      line-height:1.62;
+    }
+    .hero-sub strong{color:#FFF2C7}
+
+    .spotlight{
+      margin:22px auto 0;
+      max-width:980px;
+      border-radius:var(--r3);
+      border:1px solid var(--border);
+      background:
+        radial-gradient(620px 260px at 18% 12%, rgba(255,167,0,.14), transparent 60%),
+        radial-gradient(620px 260px at 85% 70%, rgba(12,77,155,.18), transparent 62%),
+        linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+      backdrop-filter: blur(12px);
+      box-shadow: 0 30px 90px rgba(0,0,0,.26);
+      overflow:hidden;
+      text-align:left;
+    }
+
+    .spot-head{
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      gap:12px;
+      padding:14px 16px 0;
+    }
+
+    .spot-tag{
+      display:inline-flex;align-items:center;gap:10px;
+      font-size:12px;letter-spacing:.12em;
+      text-transform:uppercase;color:#9FB4CF;
+    }
+
+    .spot-title{
+      margin-top:8px;
+      font-family:'Playfair Display',serif;
+      font-size:26px;
+      color:#FFF2C7;
+      line-height:1.15;
+    }
+    .spot-desc{
+      margin-top:8px;
+      color:rgba(199,213,230,.98);
+      line-height:1.55;
+      font-size:14px;
+    }
+
+    .chat-shell{
+      padding:16px;
+    }
+
+    .chat-grid{
+      display:grid;
+      grid-template-columns:320px 1fr;
+      gap:14px;
+      align-items:stretch;
+    }
+
+    .spot-side{
+      border-radius:22px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.16);
+      padding:14px;
+    }
+
+    .side-title{
+      color:#9FB4CF;
+      font-size:12px;letter-spacing:.12em;
+      text-transform:uppercase;
+      margin-bottom:10px;
+    }
+
+    .field{margin-bottom:12px}
+
+    .label{
+      display:block;
+      font-size:13px;
+      color:#CFE0F2;
+      margin-bottom:8px;
+      font-weight:700;
+    }
+
+    .input{
+      width:100%;
+      border:none;
+      outline:none;
+      padding:14px 14px;
+      border-radius:16px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      color:var(--text);
+      font-size:14px;
+      transition:border-color .18s ease, box-shadow .18s ease;
+    }
+    .input::placeholder{color:#9FB4CF}
+    .input:focus{
+      border-color:rgba(255,167,0,.32);
+      box-shadow:0 0 0 4px rgba(255,167,0,.08);
+    }
+
+    .mini{
+      color:#9FB4CF;
+      font-size:12px;
+      line-height:1.5;
+      margin-top:10px;
+    }
+
+    .status{
+      margin-top:12px;
+      padding:10px 12px;
+      border-radius:14px;
+      font-size:13px;
+      line-height:1.45;
+      display:none;
+      border:1px solid rgba(255,255,255,.1);
+      background:rgba(255,255,255,.05);
+    }
+    .status.show{display:block}
+    .status.error{color:#ffd6d6;border-color:rgba(255,118,118,.22);background:rgba(255,118,118,.10)}
+    .status.ok{color:#d8ffe7;border-color:rgba(126,227,167,.22);background:rgba(126,227,167,.10)}
+
+    .chat-main{
+      border-radius:22px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.12);
+      padding:14px;
+      display:flex;
+      flex-direction:column;
+      min-height:600px;
+    }
+
+    .chat-top{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+
+    .chat-top-left h2{
+      font-family:'Playfair Display',serif;
+      font-size:24px;
+      color:#FFF2C7;
+      line-height:1.2;
+    }
+
+    .chat-meta{
+      margin-top:6px;
+      color:#9FB4CF;
+      font-size:13px;
+    }
+
+    .messages{
+      flex:1;
+      min-height:380px;
+      max-height:62vh;
+      overflow:auto;
+      padding:10px;
+      border-radius:22px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(0,0,0,.14);
+      scroll-behavior:smooth;
+    }
+
+    .messages::-webkit-scrollbar{width:10px}
+    .messages::-webkit-scrollbar-thumb{
+      background:rgba(255,255,255,.12);
+      border-radius:999px;
+    }
+
+    .empty{
+      min-height:250px;
+      display:grid;
+      place-items:center;
+      text-align:center;
+      color:#9FB4CF;
+      padding:24px;
+      line-height:1.6;
+    }
+
+    .message{
+      margin-bottom:10px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .message:last-child{margin-bottom:0}
+    .message.self{align-items:flex-end}
+
+    .bubble{
+      width:fit-content;
+      max-width:min(82%, 640px);
+      border-radius:20px;
+      padding:12px 14px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.06);
+      box-shadow:0 10px 26px rgba(0,0,0,.14);
+    }
+
+    .message.self .bubble{
+      background:linear-gradient(135deg, rgba(255,167,0,.18), rgba(255,211,107,.12));
+      border-color:rgba(255,167,0,.18);
+    }
+
+    .message-head{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      margin-bottom:6px;
+      font-size:12px;
+      color:#B9CDE3;
+      font-weight:700;
+      flex-wrap:wrap;
+    }
+
+    .message-text{
+      color:#F5F8FC;
+      line-height:1.55;
+      white-space:pre-wrap;
+      word-break:break-word;
+      font-size:14px;
+    }
+
+    .composer{
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:10px;
+      margin-top:12px;
+    }
+
+    footer{
+      margin-top:44px;
+      text-align:center;
+      padding:34px 14px 26px;
+      color:#9FB4CF;
+      font-size:14px;
+    }
+
+    @media(max-width:980px){
+      .chat-grid{grid-template-columns:1fr}
+    }
+
+    @media(max-width:680px){
+      header{padding:14px}
+      .pill{display:none}
+      .brand-sub{display:none}
+      .orb{opacity:.30; filter: blur(90px)}
+      .gridglow{opacity:.045}
+      .composer{grid-template-columns:1fr}
+      .messages{max-height:56vh}
+    }
+
+    @media (max-width:640px){
+      .brand{
+        align-items:flex-start;
+      }
+      .brand-name{
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
+        line-height: 1.05;
+        display: -webkit-box;
+        line-clamp: 2;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        max-width: 165px;
+      }
+      .chat-shell{padding:12px}
+      .chat-main,
+      .spot-side,
+      .messages{border-radius:18px}
+      .bubble{max-width:90%}
+    }
+
+    #livePill,
+    #livePill:visited,
+    #livePill:hover,
+    #livePill:active {
+      text-decoration: none;
+    }
+
+    select.input {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+}
+
+.room-switcher{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+}
+
+.room-tab{
+  width:100%;
+  text-align:left;
+  padding:12px 14px;
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.12);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+  color:rgba(255,255,255,.92);
+  cursor:pointer;
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease;
+  font-weight:800;
+  letter-spacing:.01em;
+  box-shadow:0 10px 28px rgba(0,0,0,.14);
+}
+
+.room-tab:hover{
+  transform:translateY(-2px);
+  border-color:rgba(255,167,0,.24);
+  box-shadow:0 18px 42px rgba(0,0,0,.20);
+}
+
+.room-tab.active{
+  background:
+    radial-gradient(280px 120px at 20% 20%, rgba(255,167,0,.16), transparent 65%),
+    linear-gradient(135deg, rgba(255,167,0,.18), rgba(255,211,107,.10));
+  border-color:rgba(255,167,0,.30);
+  color:#FFF2C7;
+  box-shadow:0 18px 48px rgba(255,167,0,.12);
+}
+
+.room-tab small{
+  display:block;
+  margin-top:4px;
+  color:#9FB4CF;
+  font-weight:600;
+  letter-spacing:0;
+}
+
+.message.admin .bubble{
+  background:linear-gradient(135deg, rgba(255,167,0,.22), rgba(255,211,107,.14));
+  border-color:rgba(255,167,0,.24);
+}
+
+.admin-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 8px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  background:rgba(255,167,0,.12);
+  border:1px solid rgba(255,167,0,.22);
+  color:#FFD36B;
+}
+
+.admin-name{
+  color:#FFD36B;
+}
+
+.chat-rules{
+  margin-top:24px;
+}
+
+.rules-card{
+  border-radius:22px;
+  border:1px solid rgba(255,255,255,.14);
+  background:
+    radial-gradient(420px 200px at 20% 20%, rgba(255,167,0,.12), transparent 60%),
+    radial-gradient(420px 200px at 80% 80%, rgba(12,77,155,.14), transparent 60%),
+    rgba(255,255,255,.05);
+  backdrop-filter: blur(10px);
+  padding:18px 20px;
+}
+
+.rules-head{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:10px;
+}
+
+.rules-badge{
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,167,0,.28);
+  background:rgba(255,167,0,.12);
+  color:#FFD36B;
+  font-size:12px;
+  font-weight:800;
+}
+
+.rules-card h3{
+  font-family:'Playfair Display',serif;
+  color:#FFF2C7;
+  font-size:20px;
+}
+
+.rules-list{
+  list-style:none;
+  padding-left:0;
+  color:#C7D5E6;
+  line-height:1.6;
+}
+
+.rules-list li{
+  margin-bottom:6px;
+}
+.mini-rules{
+  margin-top:12px;
+  padding:10px 12px;
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.04);
+}
+
+.mini-rules-title{
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:#FFF2C7;
+  margin-bottom:6px;
+}
+
+.mini-rules-list{
+  list-style:none;
+  padding:0;
+  margin:0;
+}
+
+.mini-rules-list li{
+  font-size:12px;
+  line-height:1.45;
+  color:#AFC2D8;
+  margin-bottom:4px;
+}
+
+.mini-rules-list li:last-child{
+  margin-bottom:0;
+}
+    footer{
+      margin-top:44px;
+      text-align:center;
+      padding:34px 14px 26px;
+      color:#9FB4CF;
+      font-size:14px;
+    }
+    footer .links{
+      margin-top:10px;
+      display:flex;gap:12px;justify-content:center;flex-wrap:wrap;
+    }
+    footer .links a{
+      text-decoration:none;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.04);
+    }
+    footer .links a:hover{border-color: rgba(255,167,0,.20)}
+
+  </style>
+</head>
+<body>
+  <div class="orb one"></div>
+  <div class="orb two"></div>
+  <div class="orb three"></div>
+  <div class="gridglow"></div>
+
+  <header>
+    <a class="brand" href="https://fmpt.net" aria-label="FMPT Student Hub">
+      <span class="brand-name">FMPT STUDENT HUB</span>
+      <span class="brand-sub">chat.fmpt.net · live room</span>
+    </a>
+
+    <div class="pill" id="livePill">
+      <span class="dot"></span>
+      Live chat
+    </div>
+  </header>
+
+  <main>
+<section class="hero">
+  <div class="kicker">FMPT • <b>Live Chat</b></div>
+  <h1>Join the conversation.</h1>
+  <p class="hero-sub">
+    A simple shared chat space for FMPT students. Pick a name, enter a room,
+    and talk with others in real time.
+  </p>
+</section>
+
+
+    <section class="spotlight">
+      <div class="chat-shell">
+        <div class="chat-grid">
+          <aside class="spot-side">
+            <div class="side-title">Session</div>
+
+            <div class="field">
+              <label class="label" for="nameInput">Display name</label>
+              <input class="input" id="nameInput" maxlength="20" placeholder="Enter your name">
+            </div>
+
+<div class="field">
+  <label class="label">Rooms</label>
+
+  <div class="room-switcher" id="roomSwitcher">
+    <button class="room-tab active" type="button" data-room="main1">general chat</button>
+    <button class="room-tab" type="button" data-room="main2">specific chat</button>
+  </div>
+
+  <input type="hidden" id="roomInput" value="main1">
+</div>
+<button class="btn primary" id="joinBtn" type="button">Join chat</button>
+
+<div class="mini-rules">
+  <div class="mini-rules-title">Chat rules</div>
+  <ul class="mini-rules-list">
+    <li>Be respectful.</li>
+    <li>No insults or offensive language.</li>
+    <li>No spam or ads.</li>
+    <li>Keep it useful for FMPT students.</li>
+  </ul>
+</div>
+
+<button class="btn" id="logoutBtn" type="button" style="margin-top:10px;">Clear session</button>
+
+<p class="mini">
+  Your display name is saved only in your browser using local storage.
+</p>
+
+<div id="statusBox" class="status"></div>
+          </aside>
+
+          <section class="chat-main">
+            <div class="chat-top">
+              <div class="chat-top-left">
+                <h2 id="roomTitle">Room: main-room</h2>
+                <div class="chat-meta" id="chatMeta">Not connected yet.</div>
+              </div>
+            </div>
+
+            <div id="messages" class="messages">
+              <div class="empty">Join a room to load messages.</div>
+            </div>
+
+            <div class="composer">
+              <input
+                class="input"
+                id="messageInput"
+                maxlength="200"
+                placeholder="join the conversation"
+                disabled
+              >
+              <button class="btn primary" id="sendBtn" type="button" disabled>Send</button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div style="font-weight:900;letter-spacing:.04em" data-i18n="footer.line1">
+        © 2026 — FMPT STUDENT HUB™ · Mostly Free · Always Student-Driven · Always Elegant
+      </div>
+      <div class="links" aria-label="Useful links">
+        <a href="/annales" data-i18n="footer.link1">📦 /annales</a>
+        <a href="./dashboard.html" data-i18n="footer.link2">🧭 dashboard</a>
+        <a href="./contribute.html" data-i18n="footer.link3">🤝 contribute</a>
+        <a href="support.html" data-i18n="footer.link4">💛 support</a>
+        <a href="mailto:contact@fmpt.net" data-i18n="footer.link5">📩 contact</a>
+      </div>
+    </footer>
+  </main>
+
+<script type="module">
+
+    const bannedWords = [
+  "fuck",
+  "shit",
+  "bitch",
+  "asshole",
+  "connard",
+  "pute",
+  "salope",
+  "merde",
+  "fdp",
+  "nigger",
+  "nigga"
+];
+function containsSwear(text){
+  const lower = text.toLowerCase();
+  return bannedWords.some(word => lower.includes(word));
+}
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+  import {
+    getDatabase,
+    ref,
+    push,
+    set,
+    query,
+    limitToLast,
+    onValue
+  } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA9f0MDRFZ0W9vOebNhNnqonVuZ17nK1u0",
+    authDomain: "fmpt-hub-chat.firebaseapp.com",
+    databaseURL: "https://fmpt-hub-chat-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "fmpt-hub-chat",
+    storageBucket: "fmpt-hub-chat.firebasestorage.app",
+    messagingSenderId: "655437324077",
+    appId: "1:655437324077:web:94075bf82d60e004563da4"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  const els = {
+    nameInput: document.getElementById("nameInput"),
+    roomInput: document.getElementById("roomInput"),
+    roomSwitcher: document.getElementById("roomSwitcher"),
+    joinBtn: document.getElementById("joinBtn"),
+    logoutBtn: document.getElementById("logoutBtn"),
+    statusBox: document.getElementById("statusBox"),
+    roomTitle: document.getElementById("roomTitle"),
+    chatMeta: document.getElementById("chatMeta"),
+    messages: document.getElementById("messages"),
+    messageInput: document.getElementById("messageInput"),
+    sendBtn: document.getElementById("sendBtn")
+  };
+
+  const STORAGE_KEYS = {
+    name: "fmpt_chat_name",
+    room: "fmpt_chat_room",
+    admin: "fmpt_chat_admin"
+  };
+
+  const RESERVED_NAME = "FMPTSTUDENT";
+
+  let currentRoom = null;
+  let unsubscribeRoom = null;
+
+  function sanitizeRoom(value) {
+    const allowed = ["main1", "main2"];
+    return allowed.includes(value) ? value : "main1";
+  }
+
+  function sanitizeName(value) {
+    return String(value || "").trim().replace(/\s+/g, " ").slice(0, 20);
+  }
+
+function sanitizeMessage(value) {
+  return String(value || "").trim().slice(0, 400);
+}
+
+  function normalizeName(value) {
+    return sanitizeName(value).toUpperCase();
+  }
+
+  function isAdminSession() {
+    return localStorage.getItem(STORAGE_KEYS.admin) === "true";
+  }
+
+  function isReservedName(name) {
+    return normalizeName(name) === RESERVED_NAME;
+  }
+
+  function canUseName(name) {
+    if (isReservedName(name) && !isAdminSession()) {
+      return false;
+    }
+    return true;
+  }
+
+  function showStatus(message, type = "ok") {
+    els.statusBox.textContent = message;
+    els.statusBox.className = `status show ${type}`;
+  }
+
+  function clearStatus() {
+    els.statusBox.textContent = "";
+    els.statusBox.className = "status";
+  }
+
+  function setConnectedState(connected) {
+    els.messageInput.disabled = !connected;
+    els.sendBtn.disabled = !connected;
+    if (!connected) {
+      els.chatMeta.textContent = "Not connected yet.";
+    }
+  }
+
+  function saveSession(name, room) {
+    localStorage.setItem(STORAGE_KEYS.name, name);
+    localStorage.setItem(STORAGE_KEYS.room, room);
+  }
+
+  function clearSession() {
+    localStorage.removeItem(STORAGE_KEYS.name);
+    localStorage.removeItem(STORAGE_KEYS.room);
+  }
+
+  function getSavedName() {
+    return localStorage.getItem(STORAGE_KEYS.name) || "";
+  }
+
+  function getSavedRoom() {
+    return localStorage.getItem(STORAGE_KEYS.room) || "main1";
+  }
+
+  function formatTime(timestamp) {
+    if (!timestamp) return "";
+    const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  function setActiveRoomUI(roomId) {
+    els.roomInput.value = roomId;
+    const tabs = els.roomSwitcher.querySelectorAll(".room-tab");
+    tabs.forEach((tab) => {
+      tab.classList.toggle("active", tab.dataset.room === roomId);
+    });
+  }
+
+  function renderMessages(messages, myName) {
+    els.messages.innerHTML = "";
+
+    if (!messages.length) {
+      els.messages.innerHTML = `
+        <div class="empty">
+          No messages yet in this room.<br>
+          Send the first one.
+        </div>
+      `;
+      return;
+    }
+
+    const fragment = document.createDocumentFragment();
+
+    messages.forEach((msg) => {
+      const isSelf = msg.name === myName;
+      const isAdmin = normalizeName(msg.name) === RESERVED_NAME;
+
+      const wrapper = document.createElement("div");
+      wrapper.className = "message" + (isSelf ? " self" : "") + (isAdmin ? " admin" : "");
+
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+
+      const head = document.createElement("div");
+      head.className = "message-head";
+
+      const nameSpan = document.createElement("span");
+      nameSpan.textContent = msg.name || "Unknown";
+      if (isAdmin) nameSpan.classList.add("admin-name");
+
+      head.appendChild(nameSpan);
+
+      if (isAdmin) {
+        const badge = document.createElement("span");
+        badge.className = "admin-badge";
+        badge.textContent = "✔ official";
+        head.appendChild(badge);
+      }
+
+      const sepSpan = document.createElement("span");
+      sepSpan.textContent = "•";
+
+      const timeSpan = document.createElement("span");
+      timeSpan.textContent = formatTime(msg.createdAt);
+
+      head.append(sepSpan, timeSpan);
+
+      const text = document.createElement("div");
+      text.className = "message-text";
+      text.textContent = msg.text || "";
+
+      bubble.append(head, text);
+      wrapper.appendChild(bubble);
+      fragment.appendChild(wrapper);
+    });
+
+    els.messages.appendChild(fragment);
+    els.messages.scrollTop = els.messages.scrollHeight;
+  }
+
+  function stopListening() {
+    if (typeof unsubscribeRoom === "function") {
+      unsubscribeRoom();
+    }
+    unsubscribeRoom = null;
+    currentRoom = null;
+  }
+
+  function listenToRoom(roomId) {
+    stopListening();
+
+    currentRoom = roomId;
+    setActiveRoomUI(roomId);
+
+    els.roomTitle.textContent = `Room: ${roomId}`;
+    els.chatMeta.textContent = "Connecting...";
+    els.messages.innerHTML = `<div class="empty">Loading messages...</div>`;
+
+    const roomQuery = query(ref(db, `rooms/${roomId}/messages`), limitToLast(100));
+
+    unsubscribeRoom = onValue(
+      roomQuery,
+      (snapshot) => {
+        const value = snapshot.val();
+        const messages = value
+          ? Object.entries(value).map(([id, item]) => ({ id, ...item }))
+          : [];
+
+        messages.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+        renderMessages(messages, sanitizeName(els.nameInput.value));
+
+        els.chatMeta.textContent = `${messages.length} message${messages.length === 1 ? "" : "s"} loaded`;
+        setConnectedState(true);
+        clearStatus();
+      },
+      (error) => {
+        console.error(error);
+        showStatus("Could not load messages. Check Firebase config, database URL, and rules.", "error");
+        setConnectedState(false);
+      }
+    );
+  }
+
+  async function joinRoom(roomOverride = null) {
+    const name = sanitizeName(els.nameInput.value);
+    const room = sanitizeRoom(roomOverride || els.roomInput.value);
+
+    if (!name) {
+      showStatus("Please enter a display name.", "error");
+      return;
+    }
+
+    if (!canUseName(name)) {
+      showStatus(`The name ${RESERVED_NAME} is reserved.`, "error");
+      return;
+    }
+
+    els.nameInput.value = name;
+    saveSession(name, room);
+    listenToRoom(room);
+    showStatus(`Joined ${room}.`, "ok");
+  }
+
+  async function sendMessage() {
+    const name = sanitizeName(els.nameInput.value);
+    const room = sanitizeRoom(els.roomInput.value);
+    const text = sanitizeMessage(els.messageInput.value);
+
+    if (!name || !room) {
+      showStatus("Join a room first.", "error");
+      return;
+    }
+
+    if (!canUseName(name)) {
+      showStatus(`The name ${RESERVED_NAME} is reserved.`, "error");
+      return;
+    }
+
+    if (!text) return;
+
+if (containsSwear(text)){
+  showStatus("Message bloqué : langage inapproprié.", "error");
+  return;
+}
+
+    try {
+      els.sendBtn.disabled = true;
+
+      const messagesRef = ref(db, `rooms/${room}/messages`);
+      const newMessageRef = push(messagesRef);
+
+      await set(newMessageRef, {
+        name,
+        text,
+        room,
+        createdAt: Date.now()
+      });
+
+      els.messageInput.value = "";
+      els.messageInput.focus();
+      clearStatus();
+    } catch (error) {
+      console.error(error);
+      showStatus("Could not send message. Check database rules and Firebase setup.", "error");
+    } finally {
+      els.sendBtn.disabled = false;
+    }
+  }
+
+  function handleLogout() {
+    clearSession();
+    stopListening();
+
+    els.nameInput.value = "";
+    els.messageInput.value = "";
+    els.messages.innerHTML = `<div class="empty">Join a room to load messages.</div>`;
+    els.roomTitle.textContent = "Room: main1";
+    els.chatMeta.textContent = "Not connected yet.";
+    setActiveRoomUI("main1");
+    setConnectedState(false);
+    showStatus("Session cleared from this browser.", "ok");
+  }
+
+  function restoreSession() {
+    const savedName = getSavedName();
+    const savedRoom = getSavedRoom();
+
+    if (savedName) els.nameInput.value = savedName;
+    setActiveRoomUI(sanitizeRoom(savedRoom));
+
+    if (savedName && savedRoom) {
+      listenToRoom(sanitizeRoom(savedRoom));
+    }
+  }
+
+  els.joinBtn.addEventListener("click", () => joinRoom());
+
+  els.logoutBtn.addEventListener("click", handleLogout);
+
+  els.sendBtn.addEventListener("click", sendMessage);
+
+  els.messageInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      sendMessage();
+    }
+  });
+
+  els.nameInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      joinRoom();
+    }
+  });
+
+  els.roomSwitcher.querySelectorAll(".room-tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      const room = sanitizeRoom(tab.dataset.room);
+      setActiveRoomUI(room);
+
+      if (sanitizeName(els.nameInput.value)) {
+        joinRoom(room);
+      }
+    });
+  });
+
+  setConnectedState(false);
+  restoreSession();
+</script>
+</body>
+</html>
