@@ -627,7 +627,29 @@
       background:rgba(255,255,255,.04);
     }
     footer .links a:hover{border-color: rgba(255,167,0,.20)}
+.adnan-name{
+  color:#7FD6FF;
+}
 
+.adnan-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 8px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  background:rgba(127,214,255,.12);
+  border:1px solid rgba(127,214,255,.25);
+  color:#7FD6FF;
+}
+
+.message.adnan .bubble{
+  background:linear-gradient(135deg, rgba(127,214,255,.18), rgba(127,214,255,.08));
+  border-color:rgba(127,214,255,.25);
+}
   </style>
 </head>
 <body>
@@ -806,6 +828,7 @@ function containsSwear(text){
   };
 
   const RESERVED_NAME = "FMPTSTUDENT";
+  const SPECIAL_ADNAN = "ADNAN";
 
   let currentRoom = null;
   let unsubscribeRoom = null;
@@ -914,9 +937,14 @@ function sanitizeMessage(value) {
     messages.forEach((msg) => {
       const isSelf = msg.name === myName;
       const isAdmin = normalizeName(msg.name) === RESERVED_NAME;
+      const isAdnan = msg.name.toLowerCase() === "adnan";
 
       const wrapper = document.createElement("div");
-      wrapper.className = "message" + (isSelf ? " self" : "") + (isAdmin ? " admin" : "");
+      wrapper.className =
+  "message" +
+  (isSelf ? " self" : "") +
+  (isAdmin ? " admin" : "") +
+  (isAdnan ? " adnan" : "");
 
       const bubble = document.createElement("div");
       bubble.className = "bubble";
@@ -926,8 +954,8 @@ function sanitizeMessage(value) {
 
       const nameSpan = document.createElement("span");
       nameSpan.textContent = msg.name || "Unknown";
-      if (isAdmin) nameSpan.classList.add("admin-name");
-
+if (isAdmin) nameSpan.classList.add("admin-name");
+if (isAdnan) nameSpan.classList.add("adnan-name");
       head.appendChild(nameSpan);
 
       if (isAdmin) {
@@ -936,6 +964,13 @@ function sanitizeMessage(value) {
         badge.textContent = "✔ official";
         head.appendChild(badge);
       }
+
+      if (isAdnan) {
+  const badge = document.createElement("span");
+  badge.className = "adnan-badge";
+  badge.textContent = "sketchy ahh";
+  head.appendChild(badge);
+}
 
       const sepSpan = document.createElement("span");
       sepSpan.textContent = "•";
